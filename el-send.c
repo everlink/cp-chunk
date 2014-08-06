@@ -232,14 +232,14 @@ void main_loop(void)
 
     do {
       push_fileinfo(p_bp);
-    } while (CPAPP_IOF != wait_ack(0, &client_fseq));
+    } while (CPAPP_IOF != wait_ack(1, &client_fseq));
 
     for (unsigned int i = 0; i <= p_bp->f.filesize / CPAPP_MAX_CHUNKSIZE; i++) {
       push_chunk(p_bp, i);
     }
     push_eof(p_bp);
 
-    while (((seq = wait_ack(0, &client_fseq)) != CPAPP_EOF) || (client_fseq != fseq)) {
+    while (((seq = wait_ack(1, &client_fseq)) != CPAPP_EOF) || (client_fseq != fseq)) {
       printf("ACK LOOP:  ack, cliseq, seq  = %04x, %04x, %04x\n", seq, client_fseq, fseq);
       switch (seq) {
         case CPAPP_TMO:

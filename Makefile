@@ -10,9 +10,11 @@ REAL_LDFLAGS=$(LDFLAGS) $(ARCH)
 
 all: $(CPBIN)
 
-el-client.o: el-client.c cpapp_helper.h
+el-client.o: el-client.c cpapp_config.h cpapp_helper.h
 
-el-send.o: el-send.c cpapp_helper.h
+el-send.o: el-send.c cpapp_config.h cpapp_helper.h
+
+cpapp_helper.o: cpapp_helper.c cpapp_config.h cpapp_helper.h
 
 el-client: el-client.o cpapp_helper.o
 	$(CC) -o $@ $(REAL_CFLAGS) $(REAL_LDFLAGS) el-client.o cpapp_helper.o

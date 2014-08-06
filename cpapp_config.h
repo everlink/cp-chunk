@@ -5,8 +5,8 @@
 #define CPAPP_MAX_FILESIZE  (1024 * 1024)
 
 /* the chunk size for each transmission (the max payload size) */
-//#define CPAPP_MAX_CHUNKSIZE (1024 * 10)
-#define CPAPP_MAX_CHUNKSIZE (256)
+#define CPAPP_MAX_CHUNKSIZE (1024 * 10)
+//#define CPAPP_MAX_CHUNKSIZE (256)
 
 /* calculate the size of buffer pool, we are going the allocate the buffers from heap
  * for embedded system should have its implementation in case malloc not supported */
