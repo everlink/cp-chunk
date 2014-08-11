@@ -171,7 +171,7 @@ void push_eof(struct buffer_pool *bp)
   hdr->seq = CPAPP_EOF;
   hdr->psize = 0;
   hdr->fseq = bp->f.fseq;
-  printf("puts %d eof\n", hdr->psize);
+  printf("puts %d eof\n", bp->f.fseq);
   add_sum(buff, header_size);
   if(dr_sendto(sock_fd, buff, header_size, 0, (struct sockaddr*)&peer_addr, sizeof(struct sockaddr)) < 0) {
     perror("sendto()");
@@ -179,7 +179,7 @@ void push_eof(struct buffer_pool *bp)
   free(buff);
 }
 
-unsigned short wait_ack(int sec, unsigned short *fseq)
+unsigned short wait_ack(int time, unsigned short *fseq)
 {
   struct ack_pack ack;
   ssize_t datalen = 0;
@@ -188,15 +188,18 @@ unsigned short wait_ack(int sec, unsigned short *fseq)
 
   datalen = recvfrom(sock_fd, &ack, sizeof(struct ack_pack), MSG_DONTWAIT, (struct sockaddr*)(&si_other), (socklen_t*)&slen);
   if (datalen == -1) {    // NO DATE. perror("recvfrom");
-    if (sec) sleep(sec);
+    if (time) usleep(time);
+    printf("ACK TMO\n");
     *fseq = CPAPP_TMO;
     return CPAPP_TMO;
   } else if (datalen == sizeof(struct ack_pack)) {
     if (ack.flag == 0xacac) {
+      printf("ACK cliseq, seq  = %04x, %04x\n", ack.fseq, ack.seq);
       *fseq = ack.fseq;
       return ack.seq;
     }
   }
+  printf("ACK IGN\n");
   *fseq = CPAPP_IGN;
   return CPAPP_IGN;       // Other data
 }
@@ -205,7 +208,7 @@ void main_loop(void)
 {
   const char *s[] = {
     "001.jpg",
-    "002.jpg",
+    "002.jpg", 0,
     "003.jpg",
     "004.jpg",
     "005.jpg",
@@ -232,15 +235,15 @@ void main_loop(void)
 
     do {
       push_fileinfo(p_bp);
-    } while (CPAPP_IOF != wait_ack(1, &client_fseq));
+    } while (CPAPP_IOF != wait_ack(10, &client_fseq));
 
     for (unsigned int i = 0; i <= p_bp->f.filesize / CPAPP_MAX_CHUNKSIZE; i++) {
       push_chunk(p_bp, i);
     }
     push_eof(p_bp);
 
-    while (((seq = wait_ack(1, &client_fseq)) != CPAPP_EOF) || (client_fseq != fseq)) {
-      printf("ACK LOOP:  ack, cliseq, seq  = %04x, %04x, %04x\n", seq, client_fseq, fseq);
+    while (((seq = wait_ack(10, &client_fseq)) != CPAPP_EOF) || (client_fseq != fseq)) {
+//      printf("ACK LOOP:  ack, cliseq, seq  = %04x, %04x, %04x\n", seq, client_fseq, fseq);
       switch (seq) {
         case CPAPP_TMO:
           push_eof(p_bp);
